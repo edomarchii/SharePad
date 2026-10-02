@@ -76,6 +76,23 @@ public final class WireConnection: @unchecked Sendable {
         connection.cancel()
     }
 
+    public var interfaceSummary: String {
+        guard let path = connection.currentPath else { return "no path" }
+        let interfaces = path.availableInterfaces.map { "\($0.name) (\(Self.label(for: $0.type)))" }
+        return interfaces.isEmpty ? "no interface" : interfaces.joined(separator: ", ")
+    }
+
+    private static func label(for type: NWInterface.InterfaceType) -> String {
+        switch type {
+        case .wifi: "wifi"
+        case .wiredEthernet: "wired"
+        case .cellular: "cellular"
+        case .loopback: "loopback"
+        case .other: "other"
+        @unknown default: "unknown"
+        }
+    }
+
     public func send(_ message: WireMessage, whenSent: (@Sendable () -> Void)? = nil) {
         connection.send(content: message.encoded(), completion: .contentProcessed { _ in
             whenSent?()
