@@ -39,6 +39,11 @@ struct PopoverView: View {
 
             Divider()
 
+            if model.isWirelessAvailable {
+                WirelessSectionView(model: model)
+                Divider()
+            }
+
             Toggle("Auto-show on connect", isOn: Binding(
                 get: { model.autoShowOnConnect },
                 set: { model.setAutoShow($0) }
@@ -228,6 +233,8 @@ struct PopoverView: View {
     // briefly on a healthy connect). The app can't tell "locked" from "still trusting".
     private var statusHint: String? {
         switch model.state {
+        case .noDevice where model.wirelessStatus.pairingStoreFailed:
+            "Couldn’t read paired iPads from the Keychain. The cable still works."
         case .noDevice where model.wirelessStatus.listenerFailed:
             "Wi-Fi sharing couldn't start; SharePad keeps retrying. The cable still works."
         case .noDevice: "Plug your iPad in with its cable to begin."

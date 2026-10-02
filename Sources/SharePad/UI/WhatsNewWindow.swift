@@ -117,7 +117,7 @@ private struct PairingCodeBlock: View {
     var body: some View {
         HStack(spacing: Theme.Spacing.section) {
             TimelineView(.periodic(from: .now, by: 1)) { context in
-                code(PairingOffer.Display(pairing.currentOffer, at: context.date))
+                code(LivePairingCode.Display(pairing.currentOffer, at: context.date))
             }
             .frame(width: Self.codeSide, height: Self.codeSide)
             Text("Scan with your iPad's camera to get the iPad app and pair in one go.")
@@ -128,7 +128,7 @@ private struct PairingCodeBlock: View {
     private static let codeSide: CGFloat = 132
 
     @ViewBuilder
-    private func code(_ display: PairingOffer.Display) -> some View {
+    private func code(_ display: LivePairingCode.Display) -> some View {
         switch display {
         case .waiting:
             ProgressView()

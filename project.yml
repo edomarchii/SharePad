@@ -51,8 +51,8 @@ targets:
         # which the user-script sandbox would block.
         Debug:
           ENABLE_USER_SCRIPT_SANDBOXING: "NO"
-    # Wireless is Debug only until pairing ships (specs/wireless-product.md §10,
-    # W1), so its Info.plist keys are added to Debug products only. `info:` below
+    # Wireless is Debug only until the iPad app ships (specs/wireless-pairing-ui.md,
+    # decision 1), so its Info.plist keys are added to Debug products only. `info:` below
     # applies to every configuration and can't express that.
     postBuildScripts:
       - name: Debug-only wireless Info.plist keys
@@ -127,6 +127,13 @@ targets:
         SUPPORTS_MACCATALYST: "NO"
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: "NO"
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: "NO"
+    # The pairing QR is a universal link (specs/wireless-product.md §6); the site's
+    # apple-app-site-association file ships separately.
+    entitlements:
+      path: Sources/SharePadPad/SharePadPad.entitlements
+      properties:
+        com.apple.developer.associated-domains:
+          - applinks:sharepad.co
     info:
       path: Sources/SharePadPad/Info.plist
       properties:
@@ -136,6 +143,7 @@ targets:
         LSRequiresIPhoneOS: true
         ITSAppUsesNonExemptEncryption: false
         NSLocalNetworkUsageDescription: SharePad finds your Mac on this Wi-Fi so your drawing can appear on it.
+        NSCameraUsageDescription: SharePad uses the camera only to scan the pairing code your Mac shows.
         NSBonjourServices:
           - _sharepad._tcp
         UILaunchScreen: {}

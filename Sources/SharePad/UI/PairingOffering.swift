@@ -1,6 +1,6 @@
 import Foundation
 
-struct PairingOffer: Equatable {
+struct LivePairingCode: Equatable {
     let invitationURL: URL
     let expiresAt: Date
 
@@ -9,7 +9,7 @@ struct PairingOffer: Equatable {
         case live(URL)
         case expired
 
-        init(_ offer: PairingOffer?, at now: Date) {
+        init(_ offer: LivePairingCode?, at now: Date) {
             guard let offer else {
                 self = .waiting
                 return
@@ -21,7 +21,7 @@ struct PairingOffer: Equatable {
 
 @MainActor
 protocol PairingOffering: AnyObject {
-    var currentOffer: PairingOffer? { get }
+    var currentOffer: LivePairingCode? { get }
     func requestNewOffer()
     func endOffer()
     // Takes over the live offer, so `endOffer` is not called on this path.

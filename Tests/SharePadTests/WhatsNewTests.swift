@@ -116,12 +116,15 @@ final class WhatsNewTests: XCTestCase {
 
     func testPairingOfferDisplay() throws {
         let url = try XCTUnwrap(URL(string: "https://sharepad.co/pair#code"))
-        let offer = PairingOffer(invitationURL: url, expiresAt: Date(timeIntervalSince1970: 300))
-        XCTAssertEqual(PairingOffer.Display(nil, at: Date()), .waiting)
+        let offer = LivePairingCode(invitationURL: url, expiresAt: Date(timeIntervalSince1970: 300))
+        XCTAssertEqual(LivePairingCode.Display(nil, at: Date()), .waiting)
         XCTAssertEqual(
-            PairingOffer.Display(offer, at: Date(timeIntervalSince1970: 299)),
+            LivePairingCode.Display(offer, at: Date(timeIntervalSince1970: 299)),
             .live(url)
         )
-        XCTAssertEqual(PairingOffer.Display(offer, at: Date(timeIntervalSince1970: 300)), .expired)
+        XCTAssertEqual(
+            LivePairingCode.Display(offer, at: Date(timeIntervalSince1970: 300)),
+            .expired
+        )
     }
 }

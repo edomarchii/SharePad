@@ -12,4 +12,9 @@ enum Theme {
         static let thumbnail: CGFloat = 8
         static let card: CGFloat = 8
     }
+
+    enum Pairing {
+        static let qrSide: CGFloat = 200
+        static let panelWidth: CGFloat = 340
+    }
 }
