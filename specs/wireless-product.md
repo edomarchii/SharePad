@@ -1,6 +1,7 @@
 # Wireless sharing (product spec)
 
-> Status: **draft, Tier 3.** Follows the GO verdict in
+> Status: **draft, Tier 3. W0 code landed** (`Packages/SharePadWire`, spike
+> rebuilt on it); the W0 home Wi-Fi measurement is still to run. Follows the GO verdict in
 > [`specs/wireless.md`](wireless.md#spike-result) (2026-10-01). Touches the
 > capture pipeline, the state reducer, permissions and the share-window model, so
 > every phase below gets Plan mode before code. Reference code is the throwaway
@@ -321,17 +322,21 @@ pattern.
    as a safety net only.
 2. **On-demand keyframes:** the Mac sends `requestKeyframe` on connect, after any
    decode error, after the display layer is flushed (sleep and wake, source
-   switch) and after a send-queue drop (below). The iPad forces the next frame
-   with `kVTEncodeFrameOptionKey_ForceKeyFrame`, at most one forced keyframe per
-   500 ms.
+   switch) and after the send queue backs up (below). The iPad forces the next
+   frame with `kVTEncodeFrameOptionKey_ForceKeyFrame`, at most one forced keyframe
+   per 500 ms.
 3. **Burst cap:** `DataRateLimits` at 1.5 × the average bitrate over one second,
-   so a keyframe is spread rather than dumped. Average bitrate 6 Mbps (the spike
-   measured 2.4 Mbps of real use against an 8 Mbps target).
-4. **Expected frame rate:** set from measured capture rate, not a constant.
-5. **Send-queue cap:** the sender tracks bytes handed to the connection but not yet
-   sent. Above ~150 ms worth of frames, it stops encoding, waits for the queue to
-   drain, then sends a keyframe. Latency stays bounded during a Wi-Fi stall,
-   at the cost of a visible skip. A skip reads better than a growing delay.
+   and again over a 100 ms window, so a keyframe is spread rather than dumped in
+   one burst. Average bitrate 6 Mbps (the spike measured 2.4 Mbps of real use
+   against an 8 Mbps target).
+4. **Expected frame rate:** set from measured capture rate, not a constant,
+   held between 15 and 60 fps so an idle canvas does not inflate the frame budget.
+5. **Send-queue cap:** the sender caps the send queue by the age of its oldest
+   frame handed to the connection but not yet sent. Above 150 ms, it stops
+   encoding, waits for the queue to drain, then forces a keyframe. Nothing already
+   encoded is dropped, so the decoder's reference chain stays intact. Latency
+   stays bounded during a Wi-Fi stall, at the cost of a visible skip. A skip reads
+   better than a growing delay.
 
 ### Measurement
 
@@ -519,3 +524,12 @@ Each phase is its own PR and can be verified on its own. Hardware phases are
    pairing, reconnect and keyframe rules in `SharePadWire` are written as
    event-in, effect-out reducers so a later port is translation, not redesign.
 8. **Export of drawings** from the iPad app: not v1, revisit after launch.
+9. **Typed code length.** §6 says the typed code is "the same secret" as the QR,
+   but 24 characters from a 32-letter alphabet carry 120 bits, not 256. Either
+   the typed code is longer (52 characters), or it is a separate, shorter code
+   that is safe only because it is single use and expires in 5 minutes. Decide
+   in W2.
+10. **Which id a re-pair replaces.** `PairedDevices` replaces by the iPad's
+    device id, but `identifierForVendor` changes when the iPad app is
+    reinstalled, which is one of the ways §6 says a pairing breaks. W2 needs an
+    id that survives a reinstall (a Keychain-held UUID) or a different match.
