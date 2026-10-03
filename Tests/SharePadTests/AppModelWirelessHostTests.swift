@@ -1,4 +1,5 @@
 @testable import SharePad
+import SharePadWire
 import XCTest
 
 @MainActor
@@ -33,7 +34,7 @@ final class AppModelWirelessHostTests: AppModelTestCase {
         await model.reconcile(devices: [device("a")])
 
         XCTAssertEqual(model.hostedFeed, .usb)
-        XCTAssertEqual(wireless.hostActive.last, false)
+        XCTAssertEqual(wireless.hostPauses.last, .cable)
     }
 
     func testUnpluggingTheCableResumesWireless() async throws {
@@ -73,12 +74,12 @@ final class AppModelWirelessHostTests: AppModelTestCase {
         model.applyWireless(WirelessStatus(peer: peer, isReceiving: false))
 
         XCTAssertEqual(model.hostedFeed, .usb)
-        XCTAssertEqual(wireless.hostActive.last, false)
+        XCTAssertEqual(wireless.hostPauses.last, .cable)
 
         capture.releaseResume()
         await restarting.value
         XCTAssertEqual(model.hostedFeed, .usb)
-        XCTAssertEqual(wireless.hostActive.last, false)
+        XCTAssertEqual(wireless.hostPauses.last, .cable)
     }
 
     func testACableWithNoWirelessPeerStillPausesTheNextOne() async throws {
@@ -87,7 +88,7 @@ final class AppModelWirelessHostTests: AppModelTestCase {
 
         await model.reconcile(devices: [device("a")])
 
-        XCTAssertEqual(wireless.hostActive.last, false)
+        XCTAssertEqual(wireless.hostPauses.last, .cable)
     }
 
     func testRepeatsAreNotSent() throws {
