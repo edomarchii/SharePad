@@ -95,8 +95,24 @@ extension AppState {
         let wirelessReceiving = wireless.available && wireless.running && !wireless.failed
         if preferred == .wireless, wireless.available { return .wireless }
         if wirelessReceiving, !(usbUsable && usb.running) { return .wireless }
-        if usbUsable, !usb.failed { return .usb }
+        if usbCanHost(camera: camera, usb: usb) { return .usb }
         if wireless.available { return .wireless }
         return usbUsable ? .usb : nil
+    }
+
+    // hostedFeed starts as .usb, so a Wi-Fi only connect must stay active until it is
+    // hosted (specs/wireless-product.md §10, W4b).
+    static func isWirelessHostActive(
+        hosted: FeedKind,
+        camera: CameraAccess,
+        usb: SourceInput,
+        trialOverlayShown: Bool
+    ) -> Bool {
+        guard !trialOverlayShown else { return false }
+        return hosted == .wireless || !usbCanHost(camera: camera, usb: usb)
+    }
+
+    private static func usbCanHost(camera: CameraAccess, usb: SourceInput) -> Bool {
+        camera == .granted && usb.available && !usb.failed
     }
 }
