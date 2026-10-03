@@ -31,16 +31,33 @@ class GateTestCase: XCTestCase {
         window: FakeShareWindow = FakeShareWindow(),
         now: @escaping () -> Date = Date.init,
         sleep: @escaping @Sendable (Duration) async -> Void = { try? await Task.sleep(for: $0) },
-        sessionLimit: TimeInterval = 5 * 60
+        sessionLimit: TimeInterval = 5 * 60,
+        wireless: WirelessFeeding? = nil,
+        permission: AVAuthorizationStatus = .notDetermined
     ) -> AppModel {
         AppModel(
             preferences: preferences,
             capture: capture,
+            wireless: wireless,
             window: window,
             sleep: sleep,
             validator: validator(),
             now: now,
-            sessionLimit: sessionLimit
+            sessionLimit: sessionLimit,
+            permission: permission
         )
+    }
+
+    func poll(
+        timeoutIterations: Int = 100_000,
+        _ predicate: () -> Bool,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) async {
+        for _ in 0 ..< timeoutIterations {
+            if predicate() { return }
+            await Task.yield()
+        }
+        XCTFail("poll condition never satisfied", file: file, line: line)
     }
 }

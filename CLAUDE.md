@@ -155,11 +155,10 @@ with literals.
   stay literal — don't force those into the scale.
 - **Colours via semantic names**, not raw values. Prefer system materials
   (`.regularMaterial`, `NSVisualEffectView`) so the popover/window match macOS.
-- The status item has two steady states — **idle** (`ipad.landscape`) and **live**
-  (`ipad.landscape.badge.play`) — plus a **transient alert** (`exclamationmark.triangle.fill`,
-  ~10s) when a share is lost mid-call (`specs/mid-call-disconnect.md`). It's a
+- The status item has two states — **idle** (`ipad.landscape`) and **live**
+  (`ipad.landscape.badge.play`). A share lost mid-call shows only in the popover
+  banner (`specs/mid-call-disconnect.md`; the alert symbol went in #115). It's a
   symbol swap, not a tint: the menu bar renders items monochrome and strips colour.
-  Keep all three legible at menu-bar size.
 
 ## Code Style
 
@@ -315,6 +314,10 @@ before touching capture.
   the share window is up, then shows on a hide or once a lost-share notice clears.
   To see it in a Debug build: `open --env SHAREPAD_FEATURE_RELEASE=1.0.0` plus an
   older `lastSeenVersion` in the defaults.
+- **A starting cable never takes the window from a receiving Wi-Fi feed**
+  (`AppState.activeFeed`, `specs/wireless-product.md` §10, W4). That includes a USB
+  restart on wake, so "the share went to Wi-Fi for a moment" is this rule until
+  W4b pauses Wi-Fi while the cable is active.
 - **Wireless TLS-PSK is TLS 1.2 only, and the suite must be pinned**
   (`specs/wireless-product.md` §6, open question 3). Network.framework's default
   PSK suite has no forward secrecy, so `LinkSecurity` pins ECDHE-PSK and a loopback
