@@ -17,7 +17,6 @@ final class CanvasUndoTests: XCTestCase {
         let canvas = makeCanvas(drawing: PKDrawing(strokes: [Self.stroke]))
         let undoManager = try XCTUnwrap(canvas.hostView.undoManager)
         canvas.clear()
-        canvas.resetView()
         XCTAssertFalse(canvas.hasStrokes)
 
         RunLoop.main.run(until: Date().addingTimeInterval(0.1))
@@ -27,6 +26,16 @@ final class CanvasUndoTests: XCTestCase {
         RunLoop.main.run(until: Date().addingTimeInterval(0.1))
         undoManager.redo()
         XCTAssertFalse(canvas.hasStrokes)
+    }
+
+    func testClearReturnsToHomeView() {
+        let canvas = makeCanvas(drawing: PKDrawing(strokes: [Self.longStroke]))
+        canvas.fitDrawing()
+        XCTAssertNotEqual(canvas.viewport.zoom, Board.home.zoom)
+
+        canvas.clear()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        XCTAssertEqual(canvas.viewport.zoom, Board.home.zoom)
     }
 
     private func makeCanvas(drawing: PKDrawing) -> CanvasController {
@@ -54,6 +63,21 @@ final class CanvasUndoTests: XCTestCase {
                     opacity: 1, force: 1, azimuth: 0, altitude: .pi / 2
                 ),
             ],
+            creationDate: Date()
+        )
+    )
+
+    private static let longStroke = PKStroke(
+        ink: PKInk(.pen, color: .black),
+        path: PKStrokePath(
+            controlPoints: [CGPoint.zero, CGPoint(x: 2400, y: 3000)].enumerated()
+                .map { index, location in
+                    PKStrokePoint(
+                        location: location, timeOffset: TimeInterval(index) * 0.1,
+                        size: CGSize(width: 4, height: 4),
+                        opacity: 1, force: 1, azimuth: 0, altitude: .pi / 2
+                    )
+                },
             creationDate: Date()
         )
     )
