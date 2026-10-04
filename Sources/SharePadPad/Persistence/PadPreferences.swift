@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 enum PaperStyle: String, CaseIterable, Sendable {
@@ -36,6 +37,9 @@ struct PadPreferences {
         static let paperStyle = "paperStyle"
         static let paperTone = "paperTone"
         static let lastMac = "lastMac"
+        static let boardX = "boardCentreX"
+        static let boardY = "boardCentreY"
+        static let boardZoom = "boardZoom"
     }
 
     private let defaults: UserDefaults
@@ -54,6 +58,29 @@ struct PadPreferences {
         nonmutating set {
             defaults.set(newValue.style.rawValue, forKey: Key.paperStyle)
             defaults.set(newValue.tone.rawValue, forKey: Key.paperTone)
+        }
+    }
+
+    var boardPosition: BoardPosition? {
+        get {
+            let zoom = defaults.double(forKey: Key.boardZoom)
+            guard zoom.isFinite, zoom > 0 else { return nil }
+            return BoardPosition(
+                centre: CGPoint(
+                    x: defaults.double(forKey: Key.boardX),
+                    y: defaults.double(forKey: Key.boardY)
+                ),
+                zoom: zoom
+            )
+        }
+        nonmutating set {
+            guard let newValue else {
+                [Key.boardX, Key.boardY, Key.boardZoom].forEach(defaults.removeObject)
+                return
+            }
+            defaults.set(Double(newValue.centre.x), forKey: Key.boardX)
+            defaults.set(Double(newValue.centre.y), forKey: Key.boardY)
+            defaults.set(Double(newValue.zoom), forKey: Key.boardZoom)
         }
     }
 
