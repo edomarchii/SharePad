@@ -42,11 +42,7 @@ final class AppModel {
     private(set) var diagnosticsEnabled: Bool
     private(set) var allowWireless: Bool
 
-    #if PERSONAL_BUILD
-        private(set) var entitlement: Entitlement = .licensed
-    #else
-        private(set) var entitlement: Entitlement = .trial(daysLeft: EntitlementClock.trialDays)
-    #endif
+    private(set) var entitlement: Entitlement = .trial(daysLeft: EntitlementClock.trialDays)
     private(set) var isTrialOverlayShown = false
 
     /// Set by the composition root (App.swift) so the trial-pause overlay can open
