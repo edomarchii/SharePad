@@ -29,25 +29,36 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
         run: just release-build
 
-      # Sparkle's prebuilt framework keeps its developer's Team ID, which an ad-hoc
-      # app under Hardened Runtime refuses to load ("different Team IDs"). Re-sign
-      # the bundle ad-hoc, inside-out, in the same order as `just sign`.
-      - name: Re-sign ad-hoc, inside-out
+      # An ad-hoc signature has no Team ID, so with Hardened Runtime on, library
+      # validation on a stock Mac refuses the embedded Sparkle.framework ("different
+      # Team IDs") even though it is ad-hoc too. Hardened Runtime is only needed for
+      # notarization, so a personal build re-signs the bundle ad-hoc without it,
+      # inside-out in the same order as `just sign`. Camera access then goes through
+      # the normal TCC prompt (NSCameraUsageDescription).
+      - name: Re-sign ad-hoc without Hardened Runtime, inside-out
         run: |
           APP=.build/Build/Products/Release/SharePad.app
           FW="$APP/Contents/Frameworks/Sparkle.framework"
           V="$FW/Versions/B"
-          echo "Before:"; codesign -dv "$FW" 2>&1 | grep -E "^(Identifier|TeamIdentifier|Signature)" || true
-          codesign --force --options runtime --sign - "$V/XPCServices/Installer.xpc"
-          codesign --force --options runtime --preserve-metadata=entitlements --sign - "$V/XPCServices/Downloader.xpc"
-          codesign --force --options runtime --sign - "$V/Autoupdate"
-          codesign --force --options runtime --sign - "$V/Updater.app"
-          codesign --force --options runtime --sign - "$FW"
-          codesign --force --options runtime \
-            --entitlements Sources/SharePad/SharePad.entitlements --sign - "$APP"
+          codesign --force --sign - "$V/XPCServices/Installer.xpc"
+          codesign --force --preserve-metadata=entitlements --sign - "$V/XPCServices/Downloader.xpc"
+          codesign --force --sign - "$V/Autoupdate"
+          codesign --force --sign - "$V/Updater.app"
+          codesign --force --sign - "$FW"
+          codesign --force --entitlements Sources/SharePad/SharePad.entitlements --sign - "$APP"
           codesign --verify --deep --strict --verbose=2 "$APP"
-          echo "After:"
-          for f in "$APP" "$FW"; do codesign -dv "$f" 2>&1 | grep -E "^(Identifier|TeamIdentifier|Signature)"; done
+
+      - name: Record signing details
+        run: |
+          APP=.build/Build/Products/Release/SharePad.app
+          {
+            echo "## Runner"; sw_vers; csrutil status || true
+            for f in "$APP" "$APP/Contents/Frameworks/Sparkle.framework" \
+                     "$APP/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate"; do
+              echo "## $f"; codesign -dv --verbose=2 "$f" 2>&1 | grep -E "^(Identifier|Format|CodeDirectory|Signature|TeamIdentifier|Runtime)"
+            done
+            echo "## Entitlements"; codesign -d --entitlements - "$APP" 2>/dev/null
+          } | tee build-info.txt
 
       - name: Smoke test (launches and stays up)
         run: |
@@ -81,9 +92,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mkdir out && cp SharePad.zip SharePad.zip.sha256 out/ && cd out
+          mkdir out && cp SharePad.zip SharePad.zip.sha256 build-info.txt out/ && cd out
           git init -q -b my-build-output
-          git add SharePad.zip SharePad.zip.sha256
+          git add SharePad.zip SharePad.zip.sha256 build-info.txt
           git -c user.name="github-actions[bot]" \
               -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
               commit -q -m "SharePad.app build ${{ github.run_number }} from ${{ github.sha }}"
