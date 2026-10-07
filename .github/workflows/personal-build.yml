@@ -1,0 +1,45 @@
+name: Personal Mac build
+
+# Builds SharePad.app from this fork on a GitHub-hosted Mac, ad-hoc signed
+# (no Developer ID needed), and keeps it as a downloadable artifact.
+# Runs on pushes to the my-build branch, or by hand from the Actions tab.
+on:
+  push:
+    branches: [my-build]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build SharePad.app
+    runs-on: macos-26 # same image upstream CI uses: arm64 + Xcode 26.x (Swift 6)
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install tools
+        run: brew install xcodegen just
+
+      # Release config, Hardened Runtime, ad-hoc signed (upstream `just release-build`).
+      - name: Build
+        env:
+          RELEASE_VERSION: "1.3.0"
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: just release-build
+
+      - name: Verify app invariants
+        run: just verify-app .build/Build/Products/Release/SharePad.app
+
+      - name: Package
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            .build/Build/Products/Release/SharePad.app SharePad.zip
+          shasum -a 256 SharePad.zip
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: SharePad-app
+          path: SharePad.zip
+          retention-days: 30
