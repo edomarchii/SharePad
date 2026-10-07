@@ -39,8 +39,11 @@ jobs:
               | sed 's/^/::error::/' || true
             exit "$status"
           fi
-          n=$(grep -c -- "-D PERSONAL_BUILD" build.log || true)
-          echo "::notice::compiler invocations with -D PERSONAL_BUILD: $n"
+          # Xcode passes swiftc flags in .resp argument files, not the log.
+          grep -rl "PERSONAL_BUILD" .build/Build/Intermediates.noindex/SharePad.build \
+            > personal-build-args.txt 2>/dev/null || true
+          n=$(wc -l < personal-build-args.txt | tr -d ' ')
+          echo "::notice::SharePad compiler argument files with PERSONAL_BUILD: $n ($(head -n 1 personal-build-args.txt | xargs -r basename))"
           [ "$n" -gt 0 ] || { echo "::error::PERSONAL_BUILD never reached the compiler"; exit 1; }
 
       # An ad-hoc signature has no Team ID, so with Hardened Runtime on, library
@@ -68,7 +71,7 @@ jobs:
           {
             echo "## Runner"; sw_vers; csrutil status || true
             echo "## Trial gate"
-            echo "compiler invocations with -D PERSONAL_BUILD: $(grep -c -- '-D PERSONAL_BUILD' build.log)"
+            echo "SharePad compiler argument files with PERSONAL_BUILD:"; cat personal-build-args.txt
             for f in "$APP" "$APP/Contents/Frameworks/Sparkle.framework" \
                      "$APP/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate"; do
               echo "## $f"; codesign -dv --verbose=2 "$f" 2>&1 | grep -E "^(Identifier|Format|CodeDirectory|Signature|TeamIdentifier|Runtime)"
