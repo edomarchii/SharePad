@@ -1,0 +1,30 @@
+## Runner
+ProductName:		macOS
+ProductVersion:		26.6.2
+BuildVersion:		25G83
+System Integrity Protection status: disabled.
+## Trial gate
+15:    static let isTrialGateEnabled = false
+## .build/Build/Products/Release/SharePad.app
+Identifier=com.jonyardley.sharepad
+Format=app bundle with Mach-O universal (x86_64 arm64)
+CodeDirectory v=20400 size=4720 flags=0x2(adhoc) hashes=137+7 location=embedded
+Signature=adhoc
+TeamIdentifier=not set
+## .build/Build/Products/Release/SharePad.app/Contents/Frameworks/Sparkle.framework
+Identifier=org.sparkle-project.Sparkle
+Format=bundle with Mach-O universal (x86_64 arm64)
+CodeDirectory v=20400 size=1108 flags=0x2(adhoc) hashes=28+3 location=embedded
+Signature=adhoc
+TeamIdentifier=not set
+## .build/Build/Products/Release/SharePad.app/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate
+Identifier=Autoupdate-55554944f723d84042cd352fbb0485760ff7597a
+Format=Mach-O universal (x86_64 arm64)
+CodeDirectory v=20400 size=844 flags=0x2(adhoc) hashes=20+2 location=embedded
+Signature=adhoc
+TeamIdentifier=not set
+## Entitlements
+[Dict]
+	[Key] com.apple.security.device.camera
+	[Value]
+		[Bool] true
