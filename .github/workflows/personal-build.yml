@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write # push the zip to the my-build-output branch
 
 jobs:
   build:
@@ -34,12 +34,26 @@ jobs:
 
       - name: Package
         run: |
-          ditto -c -k --sequesterRsrc --keepParent \
+          ditto -c -k --keepParent \
             .build/Build/Products/Release/SharePad.app SharePad.zip
-          shasum -a 256 SharePad.zip
+          shasum -a 256 SharePad.zip | tee SharePad.zip.sha256
 
       - uses: actions/upload-artifact@v7
         with:
           name: SharePad-app
           path: SharePad.zip
           retention-days: 30
+
+      # Artifact downloads redirect to blob storage some networks can't reach;
+      # a branch holding the zip can be fetched with plain git instead.
+      - name: Publish the zip to the my-build-output branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir out && cp SharePad.zip SharePad.zip.sha256 out/ && cd out
+          git init -q -b my-build-output
+          git add SharePad.zip SharePad.zip.sha256
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -q -m "SharePad.app build ${{ github.run_number }} from ${{ github.sha }}"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" my-build-output
