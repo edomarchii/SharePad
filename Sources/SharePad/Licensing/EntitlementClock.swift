@@ -10,22 +10,12 @@ enum EntitlementClock {
     static let trialDays = 7
     static let day: TimeInterval = 86400
 
-    static func entitlement(firstLaunch: Date, now: Date, isLicensed: Bool) -> Entitlement {
-        // specs/licensing.md §1: the gate is honor-system and source builders may
-        // compile it out; the personal-build workflow sets PERSONAL_BUILD.
-        #if PERSONAL_BUILD
-            return .licensed
-        #else
-            return gatedEntitlement(firstLaunch: firstLaunch, now: now, isLicensed: isLicensed)
-        #endif
-    }
+    // specs/licensing.md §1: the gate is honor-system and source builders may
+    // compile it out. This personal build does; set true to restore the trial.
+    static let isTrialGateEnabled = false
 
-    private static func gatedEntitlement(
-        firstLaunch: Date,
-        now: Date,
-        isLicensed: Bool
-    ) -> Entitlement {
-        if isLicensed { return .licensed }
+    static func entitlement(firstLaunch: Date, now: Date, isLicensed: Bool) -> Entitlement {
+        if isLicensed || !isTrialGateEnabled { return .licensed }
         // specs/licensing.md §5: a clock set backwards never restarts the trial.
         guard now >= firstLaunch else { return .trialExpired }
         let remaining = firstLaunch

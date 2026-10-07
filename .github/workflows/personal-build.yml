@@ -22,8 +22,7 @@ jobs:
       - name: Install tools
         run: brew install xcodegen just
 
-      # Upstream `just release-build` plus PERSONAL_BUILD, which compiles out the
-      # honor-system trial gate (specs/licensing.md §1, EntitlementClock).
+      # Upstream `just release-build`, with compiler errors surfaced as annotations.
       - name: Build
         run: |
           just gen
@@ -31,7 +30,6 @@ jobs:
           xcodebuild -project SharePad.xcodeproj -scheme SharePad -configuration Release \
             -destination 'platform=macOS' -derivedDataPath .build \
             CURRENT_PROJECT_VERSION=${{ github.run_number }} MARKETING_VERSION=1.3.0 \
-            'SWIFT_ACTIVE_COMPILATION_CONDITIONS=$(inherited) PERSONAL_BUILD' \
             build > build.log 2>&1 || status=$?
           tail -n 40 build.log
           if [ "$status" -ne 0 ]; then
@@ -39,12 +37,6 @@ jobs:
               | sed 's/^/::error::/' || true
             exit "$status"
           fi
-          # Xcode passes swiftc flags in .resp argument files, not the log.
-          grep -rl "PERSONAL_BUILD" .build/Build/Intermediates.noindex/SharePad.build \
-            > personal-build-args.txt 2>/dev/null || true
-          n=$(wc -l < personal-build-args.txt | tr -d ' ')
-          echo "::notice::SharePad compiler argument files with PERSONAL_BUILD: $n ($(head -n 1 personal-build-args.txt | xargs -r basename))"
-          [ "$n" -gt 0 ] || { echo "::error::PERSONAL_BUILD never reached the compiler"; exit 1; }
 
       # An ad-hoc signature has no Team ID, so with Hardened Runtime on, library
       # validation on a stock Mac refuses the embedded Sparkle.framework ("different
@@ -70,8 +62,7 @@ jobs:
           APP=.build/Build/Products/Release/SharePad.app
           {
             echo "## Runner"; sw_vers; csrutil status || true
-            echo "## Trial gate"
-            echo "SharePad compiler argument files with PERSONAL_BUILD:"; cat personal-build-args.txt
+            echo "## Trial gate"; grep -n "isTrialGateEnabled =" Sources/SharePad/Licensing/EntitlementClock.swift
             for f in "$APP" "$APP/Contents/Frameworks/Sparkle.framework" \
                      "$APP/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate"; do
               echo "## $f"; codesign -dv --verbose=2 "$f" 2>&1 | grep -E "^(Identifier|Format|CodeDirectory|Signature|TeamIdentifier|Runtime)"
